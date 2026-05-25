@@ -46,7 +46,7 @@
         }
         .task.checked{opacity:.72;background:#ecfdf5}.task.checked span:last-child{text-decoration:line-through}
 
-        #debugPanel{
+        #debugPanel{display:none;
             max-width:1180px;margin:16px auto;padding:14px 18px;background:#111827;color:#f9fafb;
             border-radius:16px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;line-height:1.45
         }
@@ -571,6 +571,18 @@
             init();
         }
     })();
+</script>
+
+
+<script>
+    document.addEventListener('keydown', function(e){
+        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+            const p = document.getElementById('debugPanel');
+            if (p) {
+                p.style.display = (p.style.display === 'none' || !p.style.display) ? 'block' : 'none';
+            }
+        }
+    });
 </script>
 
 </body>
