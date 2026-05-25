@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Календарь подготовки: ДЭ + ВИ СПбПУ</title>
+<style>
+:root {
+  --bg:#f6f4ef; --card:#fff; --text:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+  --accent:#2563eb; --done:#16a34a; --de:#7c3aed; --vi:#0f766e; --doc:#b45309;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:5;background:rgba(246,244,239,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:18px 20px}
+h1{margin:0 0 8px;font-size:24px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button,select{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 12px;font-weight:600;cursor:pointer}
+button:hover{border-color:var(--accent)}
+.progress-wrap{display:flex;gap:12px;align-items:center;margin-top:12px;max-width:760px}
+.progress{height:14px;background:#e5e7eb;border-radius:999px;overflow:hidden;flex:1}
+.bar{height:100%;width:0%;background:var(--done);transition:.25s}
+#summary{color:var(--muted);font-size:14px;min-width:130px}
+main{padding:20px;max-width:1180px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.day{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 8px 22px rgba(0,0,0,.04)}
+.day.done{outline:2px solid rgba(22,163,74,.25)}
+.day-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}
+.day-head b{font-size:18px}
+.day-head span{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+meter{width:70px;height:12px}
+.tasks{display:flex;flex-direction:column;gap:8px}
+.task{display:grid;grid-template-columns:22px auto 1fr;gap:8px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:9px;background:#fafafa;line-height:1.25;font-size:14px}
+.task input{margin-top:2px;transform:scale(1.15)}
+.task:has(input:checked){opacity:.72;background:#ecfdf5;text-decoration:none}
+.task:has(input:checked) span:last-child{text-decoration:line-through}
+.tag{font-size:12px;border-radius:999px;padding:3px 7px;background:#eef2ff;color:#3730a3;white-space:nowrap;font-weight:700}
+.task:has(.tag) .tag{}
+.task .tag{background:#eef2ff}
+.task.ДЭ .tag{background:#f3e8ff;color:var(--de)}
+.task.ВИ .tag,.task.ВИ-ИТ .tag,.task.ВИ-ЭВМ .tag,.task.ВИ-ОНО .tag{background:#ccfbf1;color:var(--vi)}
+.task.Документы .tag{background:#ffedd5;color:var(--doc)}
+.task.Отдых .tag{background:#e5e7eb;color:#374151}
+.note{margin:18px 0;color:var(--muted);font-size:14px}
+@media print{
+  header{position:static} button,select,.progress-wrap{display:none} body{background:#fff} .day{break-inside:avoid;box-shadow:none}
+}
+.task.checked{opacity:.72;background:#ecfdf5}.task.checked span:last-child{text-decoration:line-through}
+</style>
+</head>
+<body>
+<header>
+  <h1>Календарь подготовки: Демоэкзамен + ВИ СПбПУ</h1>
+  <div class="controls">
+    <button onclick="checkToday()">Отметить сегодня</button>
+    <button onclick="exportProgress()">Экспорт прогресса</button>
+    <button onclick="resetProgress()">Сбросить галочки</button>
+    <button onclick="window.print()">Печать / PDF</button>
+    <select id="filter" onchange="applyFilter()">
+      <option value="all">Показать всё</option>
+      <option value="pending">Только невыполненное</option>
+      <option value="done">Только выполненные дни</option>
+    </select>
+  </div>
+  <div class="progress-wrap"><div class="progress"><div class="bar" id="bar"></div></div><div id="summary">0%</div></div>
+</header>
+<main>
+  <p class="note">Галочки автоматически сохраняются. После настройки Google Sheets прогресс будет общим для ноутбука и телефона.</p>
+  <p class="note" id="cloudStatus">Загрузка...</p>
+  <div class="grid" id="calendar">
+    <section class="day" data-date="2026-05-26">
+      <div class="day-head"><div><b>26 май</b><span>Вт</span></div><meter min="0" max="3" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-05-26-0" data-date="2026-05-26"><span class="tag">ДЭ</span><span>Проверить резервный ноутбук: Windows 11, место, зарядка, мышь, стабильность.</span></label><label class="task ДЭ"><input type="checkbox" id="2026-05-26-1" data-date="2026-05-26"><span class="tag">ДЭ</span><span>Составить список ПО: Visual Studio, .NET SDK, SQL Server/SSMS.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-05-26-2" data-date="2026-05-26"><span class="tag">ВИ ИТ</span><span>Решить 3–4 задания из демоварианта ИТ без подготовки.</span></label></div>
+    </section><section class="day" data-date="2026-05-27">
+      <div class="day-head"><div><b>27 май</b><span>Ср</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-05-27-0" data-date="2026-05-27"><span class="tag">ДЭ</span><span>Установить Visual Studio, workload ASP.NET and web development.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-05-27-1" data-date="2026-05-27"><span class="tag">ВИ ЭВМ</span><span>Проценты, пропорции, простые текстовые задачи.</span></label></div>
+    </section><section class="day" data-date="2026-05-28">
+      <div class="day-head"><div><b>28 май</b><span>Чт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-05-28-0" data-date="2026-05-28"><span class="tag">ДЭ</span><span>Установить/проверить SQL Server и SSMS. Создать тестовую БД.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-05-28-1" data-date="2026-05-28"><span class="tag">ВИ ИТ</span><span>Устройства ПК, память, ОС, файлы, ввод/вывод.</span></label></div>
+    </section><section class="day" data-date="2026-05-29">
+      <div class="day-head"><div><b>29 май</b><span>Пт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-05-29-0" data-date="2026-05-29"><span class="tag">ДЭ</span><span>Создать минимальный ASP.NET-проект. Проверить запуск и подключение БД.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-05-29-1" data-date="2026-05-29"><span class="tag">ВИ ОНО</span><span>Выписать темы открытых вопросов. Начать файл ОНО_ответы.</span></label></div>
+    </section><section class="day" data-date="2026-05-30">
+      <div class="day-head"><div><b>30 май</b><span>Сб</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-05-30-0" data-date="2026-05-30"><span class="tag">ДЭ</span><span>CRUD: сущность, таблица, вывод списка, добавление записи.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-05-30-1" data-date="2026-05-30"><span class="tag">ВИ ЭВМ</span><span>Линейные и квадратные уравнения.</span></label></div>
+    </section><section class="day" data-date="2026-05-31">
+      <div class="day-head"><div><b>31 май</b><span>Вс</span></div><meter min="0" max="3" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-05-31-0" data-date="2026-05-31"><span class="tag">ДЭ</span><span>Мини-модуль: БД → модель → CRUD → форма.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-05-31-1" data-date="2026-05-31"><span class="tag">ВИ ИТ</span><span>Решить 5 заданий из демоварианта.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-05-31-2" data-date="2026-05-31"><span class="tag">ВИ ОНО</span><span>Черновик ответа про СПО и красный диплом.</span></label></div>
+    </section><section class="day" data-date="2026-06-01">
+      <div class="day-head"><div><b>1 июнь</b><span>Пн</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-01-0" data-date="2026-06-01"><span class="tag">ДЭ</span><span>Повторить структуру проекта.</span></label><label class="task ВИ"><input type="checkbox" id="2026-06-01-1" data-date="2026-06-01"><span class="tag">ВИ</span><span>Разобрать ошибки по ИТ/ЭВМ.</span></label></div>
+    </section><section class="day" data-date="2026-06-02">
+      <div class="day-head"><div><b>2 июнь</b><span>Вт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-02-0" data-date="2026-06-02"><span class="tag">ДЭ</span><span>CRUD без подсказок: проект с сущностью Товар/Клиент/Заявка.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-02-1" data-date="2026-06-02"><span class="tag">ВИ ИТ</span><span>Кодирование информации, биты, байты, объём файла.</span></label></div>
+    </section><section class="day" data-date="2026-06-03">
+      <div class="day-head"><div><b>3 июнь</b><span>Ср</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-03-0" data-date="2026-06-03"><span class="tag">ДЭ</span><span>Entity Framework/БД: связи таблиц, внешний ключ, связанные данные.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-03-1" data-date="2026-06-03"><span class="tag">ВИ ЭВМ</span><span>Степени, корни, преобразование выражений.</span></label></div>
+    </section><section class="day" data-date="2026-06-04">
+      <div class="day-head"><div><b>4 июнь</b><span>Чт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-04-0" data-date="2026-06-04"><span class="tag">ДЭ</span><span>Формы: добавление, редактирование, удаление, валидация.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-04-1" data-date="2026-06-04"><span class="tag">ВИ ИТ</span><span>Логика AND/OR/NOT, условия.</span></label></div>
+    </section><section class="day" data-date="2026-06-05">
+      <div class="day-head"><div><b>5 июнь</b><span>Пт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-05-0" data-date="2026-06-05"><span class="tag">ДЭ</span><span>Авторизация/роли или поиск и фильтрация.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-05-1" data-date="2026-06-05"><span class="tag">ВИ ОНО</span><span>Ответы №1–2: почему продолжаешь образование, связь СПО с ПИ.</span></label></div>
+    </section><section class="day" data-date="2026-06-06">
+      <div class="day-head"><div><b>6 июнь</b><span>Сб</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-06-0" data-date="2026-06-06"><span class="tag">ДЭ</span><span>Поиск, фильтрация, сортировка, пагинация/навигация.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-06-1" data-date="2026-06-06"><span class="tag">ВИ ЭВМ</span><span>Неравенства, метод интервалов.</span></label></div>
+    </section><section class="day" data-date="2026-06-07">
+      <div class="day-head"><div><b>7 июнь</b><span>Вс</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-07-0" data-date="2026-06-07"><span class="tag">ДЭ</span><span>Пробный модуль: мини-приложение за 2 часа.</span></label><label class="task ДЭ"><input type="checkbox" id="2026-06-07-1" data-date="2026-06-07"><span class="tag">ДЭ</span><span>Разбор ошибок пробного модуля.</span></label></div>
+    </section><section class="day" data-date="2026-06-08">
+      <div class="day-head"><div><b>8 июнь</b><span>Пн</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-08-0" data-date="2026-06-08"><span class="tag">ДЭ</span><span>Оформление интерфейса: таблицы, формы, кнопки, ошибки.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-08-1" data-date="2026-06-08"><span class="tag">ВИ ИТ</span><span>Системы счисления 2↔10, двоичное представление.</span></label></div>
+    </section><section class="day" data-date="2026-06-09">
+      <div class="day-head"><div><b>9 июнь</b><span>Вт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-09-0" data-date="2026-06-09"><span class="tag">ДЭ</span><span>Отчёты/экспорт/подсчёты: сумма, количество, фильтр по дате.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-09-1" data-date="2026-06-09"><span class="tag">ВИ ЭВМ</span><span>Логарифмы, базовые свойства.</span></label></div>
+    </section><section class="day" data-date="2026-06-10">
+      <div class="day-head"><div><b>10 июнь</b><span>Ср</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-10-0" data-date="2026-06-10"><span class="tag">ДЭ</span><span>Собрать проект с нуля: БД, подключение, список.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-10-1" data-date="2026-06-10"><span class="tag">ВИ ОНО</span><span>Один ответ вслух.</span></label></div>
+    </section><section class="day" data-date="2026-06-11">
+      <div class="day-head"><div><b>11 июнь</b><span>Чт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-11-0" data-date="2026-06-11"><span class="tag">ДЭ</span><span>CRUD + фильтрация + редактирование, засечь время.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-11-1" data-date="2026-06-11"><span class="tag">ВИ ИТ</span><span>3 коротких задания на кодирование/логику.</span></label></div>
+    </section><section class="day" data-date="2026-06-12">
+      <div class="day-head"><div><b>12 июнь</b><span>Пт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-12-0" data-date="2026-06-12"><span class="tag">ДЭ</span><span>Проверка экзаменационного ноутбука: VS, SQL, запуск без интернета.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-12-1" data-date="2026-06-12"><span class="tag">ВИ ЭВМ</span><span>5 простых задач: проценты/уравнения.</span></label></div>
+    </section><section class="day" data-date="2026-06-13">
+      <div class="day-head"><div><b>13 июнь</b><span>Сб</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-13-0" data-date="2026-06-13"><span class="tag">ДЭ</span><span>Типовые ошибки: строка подключения, миграции, nullable, формы.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-13-1" data-date="2026-06-13"><span class="tag">ВИ ОНО</span><span>Ответ про роль программирования/математики в СПО.</span></label></div>
+    </section><section class="day" data-date="2026-06-14">
+      <div class="day-head"><div><b>14 июнь</b><span>Вс</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-14-0" data-date="2026-06-14"><span class="tag">ДЭ</span><span>Главный пробник ДЭ 3–4 часа в режиме экзамена.</span></label><label class="task ДЭ"><input type="checkbox" id="2026-06-14-1" data-date="2026-06-14"><span class="tag">ДЭ</span><span>Список ошибок после пробника.</span></label></div>
+    </section><section class="day" data-date="2026-06-15">
+      <div class="day-head"><div><b>15 июнь</b><span>Пн</span></div><meter min="0" max="3" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-15-0" data-date="2026-06-15"><span class="tag">ДЭ</span><span>Исправить ошибки после пробника.</span></label><label class="task ДЭ"><input type="checkbox" id="2026-06-15-1" data-date="2026-06-15"><span class="tag">ДЭ</span><span>Чек-лист действий на экзамене.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-15-2" data-date="2026-06-15"><span class="tag">ВИ ИТ</span><span>20 минут повторения систем счисления.</span></label></div>
+    </section><section class="day" data-date="2026-06-16">
+      <div class="day-head"><div><b>16 июнь</b><span>Вт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-16-0" data-date="2026-06-16"><span class="tag">ДЭ</span><span>Лёгкий повтор: структура проекта, БД, CRUD, запуск.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-16-1" data-date="2026-06-16"><span class="tag">ВИ ОНО</span><span>15 минут ОНО или отдых.</span></label></div>
+    </section><section class="day" data-date="2026-06-17">
+      <div class="day-head"><div><b>17 июнь</b><span>Ср</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-17-0" data-date="2026-06-17"><span class="tag">ДЭ</span><span>Д-1: проверить ноутбук, зарядку, мышь, VS, SQL.</span></label><label class="task ДЭ"><input type="checkbox" id="2026-06-17-1" data-date="2026-06-17"><span class="tag">ДЭ</span><span>Создать тестовый проект. Никаких новых технологий.</span></label></div>
+    </section><section class="day" data-date="2026-06-18">
+      <div class="day-head"><div><b>18 июнь</b><span>Чт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ДЭ"><input type="checkbox" id="2026-06-18-0" data-date="2026-06-18"><span class="tag">ДЭ</span><span>Демоэкзамен.</span></label><label class="task Отдых"><input type="checkbox" id="2026-06-18-1" data-date="2026-06-18"><span class="tag">Отдых</span><span>После экзамена не трогать ВИ.</span></label></div>
+    </section><section class="day" data-date="2026-06-19">
+      <div class="day-head"><div><b>19 июнь</b><span>Пт</span></div><meter min="0" max="3" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ"><input type="checkbox" id="2026-06-19-0" data-date="2026-06-19"><span class="tag">ВИ</span><span>Разобрать оставшиеся действия по поступлению.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-19-1" data-date="2026-06-19"><span class="tag">ВИ ИТ</span><span>Демовариант ИТ, задания 1–5.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-19-2" data-date="2026-06-19"><span class="tag">ВИ ОНО</span><span>Структура ответов.</span></label></div>
+    </section><section class="day" data-date="2026-06-20">
+      <div class="day-head"><div><b>20 июнь</b><span>Сб</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-20-0" data-date="2026-06-20"><span class="tag">ВИ ИТ</span><span>Кодирование, объём информации, таблицы, Excel-логика.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-20-1" data-date="2026-06-20"><span class="tag">ВИ ЭВМ</span><span>Проценты, уравнения, неравенства.</span></label></div>
+    </section><section class="day" data-date="2026-06-21">
+      <div class="day-head"><div><b>21 июнь</b><span>Вс</span></div><meter min="0" max="3" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-21-0" data-date="2026-06-21"><span class="tag">ВИ ИТ</span><span>ИТ-пробник 120 минут.</span></label><label class="task ВИ"><input type="checkbox" id="2026-06-21-1" data-date="2026-06-21"><span class="tag">ВИ</span><span>Разбор ошибок.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-21-2" data-date="2026-06-21"><span class="tag">ВИ ОНО</span><span>2 ответа письменно.</span></label></div>
+    </section><section class="day" data-date="2026-06-22">
+      <div class="day-head"><div><b>22 июнь</b><span>Пн</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-22-0" data-date="2026-06-22"><span class="tag">ВИ ЭВМ</span><span>Задания 1–10 из вариантов прошлых лет.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-22-1" data-date="2026-06-22"><span class="tag">ВИ ОНО</span><span>Ответы про СПО, программирование, математику.</span></label></div>
+    </section><section class="day" data-date="2026-06-23">
+      <div class="day-head"><div><b>23 июнь</b><span>Вт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-23-0" data-date="2026-06-23"><span class="tag">ВИ ИТ</span><span>Логика, условия, алгоритмы.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-23-1" data-date="2026-06-23"><span class="tag">ВИ ЭВМ</span><span>Логарифмы/степени.</span></label></div>
+    </section><section class="day" data-date="2026-06-24">
+      <div class="day-head"><div><b>24 июнь</b><span>Ср</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-24-0" data-date="2026-06-24"><span class="tag">ВИ ЭВМ</span><span>Функции, область определения, графики.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-24-1" data-date="2026-06-24"><span class="tag">ВИ ИТ</span><span>3 задания на системы счисления.</span></label></div>
+    </section><section class="day" data-date="2026-06-25">
+      <div class="day-head"><div><b>25 июнь</b><span>Чт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-25-0" data-date="2026-06-25"><span class="tag">ВИ ИТ</span><span>Алгоритмы исполнителя, циклы, псевдокод.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-25-1" data-date="2026-06-25"><span class="tag">ВИ ОНО</span><span>Ответы про дисциплины СПО.</span></label></div>
+    </section><section class="day" data-date="2026-06-26">
+      <div class="day-head"><div><b>26 июнь</b><span>Пт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-26-0" data-date="2026-06-26"><span class="tag">ВИ ЭВМ</span><span>Производная: монотонность, экстремум, касательная.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-26-1" data-date="2026-06-26"><span class="tag">ВИ ИТ</span><span>20 минут кодирования.</span></label></div>
+    </section><section class="day" data-date="2026-06-27">
+      <div class="day-head"><div><b>27 июнь</b><span>Сб</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-27-0" data-date="2026-06-27"><span class="tag">ВИ ИТ</span><span>Программирование: цифры числа, перебор, минимум/максимум.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-27-1" data-date="2026-06-27"><span class="tag">ВИ ЭВМ</span><span>5 задач на логарифмы.</span></label></div>
+    </section><section class="day" data-date="2026-06-28">
+      <div class="day-head"><div><b>28 июнь</b><span>Вс</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-06-28-0" data-date="2026-06-28"><span class="tag">ВИ ЭВМ</span><span>ЭВМ-пробник 120 минут. Цель: задания 1–13.</span></label><label class="task ВИ"><input type="checkbox" id="2026-06-28-1" data-date="2026-06-28"><span class="tag">ВИ</span><span>Разбор пробника.</span></label></div>
+    </section><section class="day" data-date="2026-06-29">
+      <div class="day-head"><div><b>29 июнь</b><span>Пн</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ОНО"><input type="checkbox" id="2026-06-29-0" data-date="2026-06-29"><span class="tag">ВИ ОНО</span><span>Собрать 10 готовых ответов.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-29-1" data-date="2026-06-29"><span class="tag">ВИ ИТ</span><span>Таблицы, диаграммы, файлы.</span></label></div>
+    </section><section class="day" data-date="2026-06-30">
+      <div class="day-head"><div><b>30 июнь</b><span>Вт</span></div><meter min="0" max="1" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-06-30-0" data-date="2026-06-30"><span class="tag">ВИ ИТ</span><span>ИТ-пробник 120 минут. Цель: 70+.</span></label></div>
+    </section><section class="day" data-date="2026-07-01">
+      <div class="day-head"><div><b>1 июль</b><span>Ср</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-07-01-0" data-date="2026-07-01"><span class="tag">ВИ ИТ</span><span>Разбор ИТ-пробника.</span></label><label class="task ВИ"><input type="checkbox" id="2026-07-01-1" data-date="2026-07-01"><span class="tag">ВИ</span><span>Мини-шпаргалка по формулам и типам задач.</span></label></div>
+    </section><section class="day" data-date="2026-07-02">
+      <div class="day-head"><div><b>2 июль</b><span>Чт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-07-02-0" data-date="2026-07-02"><span class="tag">ВИ ЭВМ</span><span>Вероятность, прогрессии, системы уравнений.</span></label><label class="task ВИ-ОНО"><input type="checkbox" id="2026-07-02-1" data-date="2026-07-02"><span class="tag">ВИ ОНО</span><span>2 ответа вслух.</span></label></div>
+    </section><section class="day" data-date="2026-07-03">
+      <div class="day-head"><div><b>3 июль</b><span>Пт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-07-03-0" data-date="2026-07-03"><span class="tag">ВИ ИТ</span><span>Кодирование → логика → алгоритмы → программирование.</span></label><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-07-03-1" data-date="2026-07-03"><span class="tag">ВИ ЭВМ</span><span>20 минут формул.</span></label></div>
+    </section><section class="day" data-date="2026-07-04">
+      <div class="day-head"><div><b>4 июль</b><span>Сб</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ОНО"><input type="checkbox" id="2026-07-04-0" data-date="2026-07-04"><span class="tag">ВИ ОНО</span><span>Полный черновик 17 ответов.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-07-04-1" data-date="2026-07-04"><span class="tag">ВИ ИТ</span><span>30 минут повторения.</span></label></div>
+    </section><section class="day" data-date="2026-07-05">
+      <div class="day-head"><div><b>5 июль</b><span>Вс</span></div><meter min="0" max="1" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ"><input type="checkbox" id="2026-07-05-0" data-date="2026-07-05"><span class="tag">ВИ</span><span>Смешанный пробник: ИТ 60 мин + ЭВМ 60 мин + ОНО 60 мин.</span></label></div>
+    </section><section class="day" data-date="2026-07-06">
+      <div class="day-head"><div><b>6 июль</b><span>Пн</span></div><meter min="0" max="1" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-07-06-0" data-date="2026-07-06"><span class="tag">ВИ ЭВМ</span><span>Полный вариант 120 минут. Цель: 60–75.</span></label></div>
+    </section><section class="day" data-date="2026-07-07">
+      <div class="day-head"><div><b>7 июль</b><span>Вт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-07-07-0" data-date="2026-07-07"><span class="tag">ВИ ЭВМ</span><span>Разбор ЭВМ.</span></label><label class="task ВИ"><input type="checkbox" id="2026-07-07-1" data-date="2026-07-07"><span class="tag">ВИ</span><span>Список: точно решаю / иногда решаю / пропускаю.</span></label></div>
+    </section><section class="day" data-date="2026-07-08">
+      <div class="day-head"><div><b>8 июль</b><span>Ср</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-07-08-0" data-date="2026-07-08"><span class="tag">ВИ ИТ</span><span>Полный вариант 120 минут.</span></label><label class="task ВИ-ИТ"><input type="checkbox" id="2026-07-08-1" data-date="2026-07-08"><span class="tag">ВИ ИТ</span><span>Разбор ошибок.</span></label></div>
+    </section><section class="day" data-date="2026-07-09">
+      <div class="day-head"><div><b>9 июль</b><span>Чт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ОНО"><input type="checkbox" id="2026-07-09-0" data-date="2026-07-09"><span class="tag">ВИ ОНО</span><span>Финальная версия ответов.</span></label><label class="task Документы"><input type="checkbox" id="2026-07-09-1" data-date="2026-07-09"><span class="tag">Документы</span><span>Проверить связь ответов с СПО и красным дипломом.</span></label></div>
+    </section><section class="day" data-date="2026-07-10">
+      <div class="day-head"><div><b>10 июль</b><span>Пт</span></div><meter min="0" max="1" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ЭВМ"><input type="checkbox" id="2026-07-10-0" data-date="2026-07-10"><span class="tag">ВИ ЭВМ</span><span>Задания 1–13 из разных вариантов.</span></label></div>
+    </section><section class="day" data-date="2026-07-11">
+      <div class="day-head"><div><b>11 июль</b><span>Сб</span></div><meter min="0" max="1" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ-ИТ"><input type="checkbox" id="2026-07-11-0" data-date="2026-07-11"><span class="tag">ВИ ИТ</span><span>Программирование и алгоритмы: перебор, строки, цифры числа.</span></label></div>
+    </section><section class="day" data-date="2026-07-12">
+      <div class="day-head"><div><b>12 июль</b><span>Вс</span></div><meter min="0" max="1" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ"><input type="checkbox" id="2026-07-12-0" data-date="2026-07-12"><span class="tag">ВИ</span><span>Генеральная репетиция: ИТ 90–120 мин, ЭВМ 90 мин, ОНО 40 мин.</span></label></div>
+    </section><section class="day" data-date="2026-07-13">
+      <div class="day-head"><div><b>13 июль</b><span>Пн</span></div><meter min="0" max="1" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ"><input type="checkbox" id="2026-07-13-0" data-date="2026-07-13"><span class="tag">ВИ</span><span>Исправить слабые места. Новых тем не брать.</span></label></div>
+    </section><section class="day" data-date="2026-07-14">
+      <div class="day-head"><div><b>14 июль</b><span>Вт</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task ВИ"><input type="checkbox" id="2026-07-14-0" data-date="2026-07-14"><span class="tag">ВИ</span><span>Лёгкий повтор: формулы ЭВМ, схемы ИТ, ответы ОНО.</span></label><label class="task Документы"><input type="checkbox" id="2026-07-14-1" data-date="2026-07-14"><span class="tag">Документы</span><span>Проверить документы и личный кабинет.</span></label></div>
+    </section><section class="day" data-date="2026-07-15">
+      <div class="day-head"><div><b>15 июль</b><span>Ср</span></div><meter min="0" max="2" value="0"></meter></div>
+      <div class="tasks"><label class="task Документы"><input type="checkbox" id="2026-07-15-0" data-date="2026-07-15"><span class="tag">Документы</span><span>Проверить заявление, диплом с отличием, приложение, запись на ВИ.</span></label><label class="task ВИ"><input type="checkbox" id="2026-07-15-1" data-date="2026-07-15"><span class="tag">ВИ</span><span>Учиться максимум 1 час: только лёгкий повтор.</span></label></div>
+    </section>
+  </div>
+</main>
+
+
+<script>
+(function () {
+  "use strict";
+
+  // Вставь сюда URL Web App из Google Apps Script, который заканчивается на /exec
+  const API_URL = "https://script.google.com/macros/s/AKfycbx9vXakbKHvxlNoP4KhD12SyZ90AM2qpBQBjbTEm81wZFBj_0ncBq4lN_L_g_YCPJoOPA/exec";
+  const KEY = "spbpu_calendar_progress_fixed_v1";
+  let boxes = [];
+
+  function el(id) { return document.getElementById(id); }
+
+  function status(text) {
+    const s = el("cloudStatus");
+    if (s) s.textContent = text;
+  }
+
+  function apiReady() {
+    return API_URL.indexOf("PASTE_YOUR") === -1 &&
+           API_URL.indexOf("https://script.google.com/macros/s/") === 0;
+  }
+
+  function loadLocal() {
+    let data = {};
+    try { data = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e) {}
+    boxes.forEach(b => b.checked = !!data[b.id]);
+  }
+
+  function saveLocal() {
+    const data = {};
+    boxes.forEach(b => data[b.id] = b.checked);
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }
+
+  function update() {
+    const total = boxes.length;
+    const done = boxes.filter(b => b.checked).length;
+    const pct = total ? Math.round(done / total * 100) : 0;
+
+    if (el("bar")) el("bar").style.width = pct + "%";
+    if (el("summary")) el("summary").textContent = done + "/" + total + " — " + pct + "%";
+
+    boxes.forEach(b => {
+      const label = b.closest(".task");
+      if (label) label.classList.toggle("checked", b.checked);
+    });
+
+    document.querySelectorAll(".day").forEach(day => {
+      const bs = Array.from(day.querySelectorAll("input[type='checkbox']"));
+      const d = bs.filter(b => b.checked).length;
+      day.classList.toggle("done", bs.length > 0 && d === bs.length);
+
+      const meter = day.querySelector("meter");
+      if (meter) { meter.max = Math.max(1, bs.length); meter.value = d; }
+    });
+
+    applyFilter();
+  }
+
+  function jsonp(params, timeoutMs = 12000) {
+    return new Promise((resolve, reject) => {
+      if (!apiReady()) { reject(new Error("API_URL не настроен")); return; }
+
+      const cb = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      const qs = new URLSearchParams(params);
+      qs.set("callback", cb);
+      qs.set("_", Date.now());
+
+      const tag = document.createElement("script");
+      const timer = setTimeout(() => cleanup(new Error("timeout")), timeoutMs);
+
+      function cleanup(err, data) {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch(e) { window[cb] = undefined; }
+        if (tag.parentNode) tag.parentNode.removeChild(tag);
+        err ? reject(err) : resolve(data);
+      }
+
+      window[cb] = data => cleanup(null, data);
+      tag.onerror = () => cleanup(new Error("script load error"));
+      tag.src = API_URL + (API_URL.includes("?") ? "&" : "?") + qs.toString();
+      document.body.appendChild(tag);
+    });
+  }
+
+  async function loadRemote() {
+    if (!apiReady()) { status("💾 API_URL не настроен: работает локальное сохранение"); return; }
+    try {
+      status("☁️ Загружаю прогресс из Google Sheets...");
+      const r = await jsonp({ action: "load" });
+      if (r && r.ok && r.progress) {
+        boxes.forEach(b => b.checked = !!r.progress[b.id]);
+        saveLocal();
+        update();
+        status("☁️ Прогресс загружен из Google Sheets");
+      } else {
+        status("⚠️ Apps Script ответил, но прогресс не прочитан");
+      }
+    } catch (e) {
+      console.error(e);
+      status("⚠️ Google Sheets не загрузился, работает локальное сохранение");
+    }
+  }
+
+  async function saveRemoteOne(id, checked) {
+    if (!apiReady()) { status("💾 Сохранено локально"); return; }
+    try {
+      const r = await jsonp({ action: "set", task_id: id, done: checked ? "true" : "false" });
+      status(r && r.ok ? "☁️ Сохранено в Google Sheets" : "⚠️ Google Sheets не подтвердил сохранение");
+    } catch (e) {
+      console.error(e);
+      status("⚠️ Не удалось сохранить в Google Sheets, сохранено локально");
+    }
+  }
+
+  async function saveRemoteAll() {
+    if (!apiReady()) { status("💾 Сохранено локально"); return; }
+    const checked = boxes.filter(b => b.checked).map(b => b.id).join(",");
+    try {
+      const r = await jsonp({ action: "saveChecked", checked: checked }, 20000);
+      status(r && r.ok ? "☁️ Все изменения сохранены в Google Sheets" : "⚠️ Google Sheets не подтвердил сохранение");
+    } catch(e) {
+      console.error(e);
+      status("⚠️ Не удалось сохранить всё в Google Sheets");
+    }
+  }
+
+  function onChange(b) {
+    saveLocal();
+    update();
+    saveRemoteOne(b.id, b.checked);
+  }
+
+  function checkToday() {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayBoxes = boxes.filter(b => b.dataset.date === today);
+    if (!todayBoxes.length) { alert("На сегодня в календаре нет задач."); return; }
+    todayBoxes.forEach(b => b.checked = true);
+    saveLocal(); update(); saveRemoteAll();
+  }
+
+  function resetProgress() {
+    if (!confirm("Сбросить все галочки?")) return;
+    boxes.forEach(b => b.checked = false);
+    saveLocal(); update(); saveRemoteAll();
+  }
+
+  function exportProgress() {
+    const lines = [];
+    document.querySelectorAll(".day").forEach(day => {
+      const title = day.querySelector(".day-head b")?.textContent || day.dataset.date;
+      const bs = Array.from(day.querySelectorAll("input[type='checkbox']"));
+      lines.push(title + ": " + bs.filter(b => b.checked).length + "/" + bs.length);
+    });
+    const blob = new Blob([lines.join("
+")], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "progress_spbpu_de_vi.txt";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function applyFilter() {
+    const f = el("filter") ? el("filter").value : "all";
+    document.querySelectorAll(".day").forEach(day => {
+      const bs = Array.from(day.querySelectorAll("input[type='checkbox']"));
+      const allDone = bs.length > 0 && bs.every(b => b.checked);
+      const anyPending = bs.some(b => !b.checked);
+      day.style.display = (f === "all" || (f === "pending" && anyPending) || (f === "done" && allDone)) ? "" : "none";
+    });
+  }
+
+  function bindButton(text, fn) {
+    Array.from(document.querySelectorAll("button")).forEach(btn => {
+      if (btn.textContent.trim().includes(text)) btn.addEventListener("click", fn);
+    });
+  }
+
+  function init() {
+    boxes = Array.from(document.querySelectorAll("input[type='checkbox']"));
+    boxes.forEach(b => b.addEventListener("change", () => onChange(b)));
+
+    bindButton("Отметить сегодня", checkToday);
+    bindButton("Экспорт", exportProgress);
+    bindButton("Сбросить", resetProgress);
+    bindButton("Печать", () => window.print());
+
+    if (el("filter")) el("filter").addEventListener("change", applyFilter);
+
+    loadLocal();
+    update();
+    loadRemote();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+
+
+</body>
+</html>
